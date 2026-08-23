@@ -5,6 +5,7 @@ import { BedDouble, Car, Heart, MapPin, Ruler, Scale } from "lucide-react";
 import { Imovel } from "@/lib/types";
 import { fmt, fmtData } from "@/lib/format";
 import { useFavoritos } from "@/lib/storage";
+import PropertyPhoto from "@/components/PropertyPhoto";
 
 export default function PropertyCard({ imovel }: { imovel: Imovel }) {
   const { isFavorito, toggle } = useFavoritos();
@@ -15,8 +16,8 @@ export default function PropertyCard({ imovel }: { imovel: Imovel }) {
       href={`/imovel/${imovel.id}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="relative flex h-40 items-center justify-center bg-brand-light text-brand/40">
-        <span className="text-sm font-medium">{imovel.tipo}</span>
+      <div className="relative flex h-40 items-center justify-center overflow-hidden bg-brand-light text-brand/40">
+        <PropertyPhoto foto={imovel.foto} alt={imovel.endereco} tipo={imovel.tipo} />
         <span className="absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
           {imovel.desconto}% OFF
         </span>

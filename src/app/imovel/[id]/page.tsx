@@ -6,6 +6,7 @@ import { fmt, fmtData } from "@/lib/format";
 import ViabilityCalculator from "@/components/ViabilityCalculator";
 import MarcarArrematado from "@/components/MarcarArrematado";
 import EnviarParaAnalise from "@/components/EnviarParaAnalise";
+import PropertyPhoto from "@/components/PropertyPhoto";
 
 export default async function ImovelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,8 +21,8 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="relative flex h-64 items-center justify-center rounded-xl bg-brand-light text-brand/40 sm:h-80">
-            <span className="text-lg font-medium">{imovel.tipo}</span>
+          <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-xl bg-brand-light text-brand/40 sm:h-80">
+            <PropertyPhoto foto={imovel.foto} alt={imovel.endereco} tipo={imovel.tipo} />
             <span className="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-sm font-bold text-white">
               {imovel.desconto}% de desconto
             </span>
