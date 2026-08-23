@@ -1,35 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Briefcase, Trophy, Wallet } from "lucide-react";
+import { Briefcase, Loader2, Trophy, Wallet } from "lucide-react";
 import { Imovel } from "@/lib/types";
 import { fmt, fmtN } from "@/lib/format";
-import { useArrematados } from "@/lib/storage";
 import PatrimonioChart from "./PatrimonioChart";
 
 type Cenario = "atual" | "padrao" | "agressivo";
 type Estrategia = "renda" | "multiplicacao";
 
-export default function CarteiraTab({ imoveis }: { imoveis: Imovel[] }) {
-  const { arrematados } = useArrematados();
+export default function CarteiraTab() {
+  const [imoveis, setImoveis] = useState<Imovel[] | null>(null);
 
-  const registros = arrematados
-    .map((a) => ({ a, im: imoveis.find((i) => i.id === a.id) }))
-    .filter((r): r is { a: (typeof arrematados)[number]; im: Imovel } => !!r.im);
-
-  const desembolsoTotal = registros.reduce((s, r) => s + r.a.precoArrematado, 0);
-  const patrimonioTotal = registros.reduce((s, r) => s + r.im.avaliacao, 0);
-  const lucroLiquido = patrimonioTotal - desembolsoTotal;
-  const roiMedio = desembolsoTotal > 0 ? (lucroLiquido / desembolsoTotal) * 100 : 0;
+  useEffect(() => {
+    fetch("/api/imoveis")
+      .then((r) => r.json())
+      .then((data) => setImoveis(data.imoveis ?? []));
+  }, []);
 
   const [cenario, setCenario] = useState<Cenario>("atual");
   const [prazoAnos, setPrazoAnos] = useState(10);
   const [estrategia, setEstrategia] = useState<Estrategia>("multiplicacao");
   const [reinvestimento, setReinvestimento] = useState(100);
 
-  const taxaAnual = cenario === "atual" ? Math.max(roiMedio, 0) : cenario === "padrao" ? 20 : 30;
+  if (imoveis === null) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-muted">
+        <Loader2 className="animate-spin" size={20} /> Carregando carteira...
+      </div>
+    );
+  }
 
+  const arrematados = imoveis.filter((im) => im.pipelineEtapa === "arrematado");
+
+  const desembolsoTotal = arrematados.reduce((s, im) => s + (im.precoArrematado ?? im.lance_minimo), 0);
+  const patrimonioTotal = arrematados.reduce((s, im) => s + im.avaliacao, 0);
+  const lucroLiquido = patrimonioTotal - desembolsoTotal;
+  const roiMedio = desembolsoTotal > 0 ? (lucroLiquido / desembolsoTotal) * 100 : 0;
+
+  const taxaAnual = cenario === "atual" ? Math.max(roiMedio, 0) : cenario === "padrao" ? 20 : 30;
   const capitalInicial = patrimonioTotal > 0 ? patrimonioTotal : 0;
 
   const serie: number[] = [capitalInicial];
@@ -44,7 +54,7 @@ export default function CarteiraTab({ imoveis }: { imoveis: Imovel[] }) {
   const lucroAno1 = capitalInicial * (taxaAnual / 100);
   const lucroRetiradoHoje = lucroAno1 * (1 - reinvestimento / 100);
 
-  if (registros.length === 0) {
+  if (arrematados.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card py-20 text-center text-muted">
         <Briefcase size={28} />
@@ -53,8 +63,8 @@ export default function CarteiraTab({ imoveis }: { imoveis: Imovel[] }) {
           Marque um imóvel como “arrematado” na ficha dele para começar a acompanhar aqui a
           evolução do seu patrimônio.
         </p>
-        <Link href="/buscar" className="mt-2 text-sm font-semibold text-brand hover:underline">
-          Buscar imóveis
+        <Link href="/painel?tab=meus-imoveis" className="mt-2 text-sm font-semibold text-brand hover:underline">
+          Ver meus imóveis
         </Link>
       </div>
     );
@@ -79,7 +89,7 @@ export default function CarteiraTab({ imoveis }: { imoveis: Imovel[] }) {
         <div className="lg:col-span-2">
           <h3 className="mb-2 text-sm font-semibold text-foreground">Imóveis arrematados</h3>
           <div className="space-y-2">
-            {registros.map(({ a, im }) => (
+            {arrematados.map((im) => (
               <Link
                 key={im.id}
                 href={`/imovel/${im.id}`}
@@ -92,7 +102,7 @@ export default function CarteiraTab({ imoveis }: { imoveis: Imovel[] }) {
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="font-semibold text-brand">{fmt(a.precoArrematado)}</p>
+                  <p className="font-semibold text-brand">{fmt(im.precoArrematado ?? im.lance_minimo)}</p>
                   <p className="text-xs text-success">avaliado em {fmt(im.avaliacao)}</p>
                 </div>
               </Link>

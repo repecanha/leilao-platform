@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BedDouble, Car, ExternalLink, MapPin, Ruler, Scale, ShieldAlert } from "lucide-react";
 import { getImovel } from "@/lib/imoveis-service";
 import { fmt, fmtData } from "@/lib/format";
+import { ETAPA_LABEL } from "@/lib/types";
 import ViabilityCalculator from "@/components/ViabilityCalculator";
 import MarcarArrematado from "@/components/MarcarArrematado";
-import EnviarParaAnalise from "@/components/EnviarParaAnalise";
+import GerenciarImovel from "@/components/GerenciarImovel";
 import PropertyPhoto from "@/components/PropertyPhoto";
 
 export default async function ImovelPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,10 +14,12 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
   const imovel = await getImovel(id);
   if (!imovel) notFound();
 
+  const arrematado = imovel.pipelineEtapa === "arrematado";
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <Link href="/buscar" className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
-        <ArrowLeft size={15} /> Voltar para a busca
+      <Link href="/painel?tab=meus-imoveis" className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
+        <ArrowLeft size={15} /> Voltar para meus imóveis
       </Link>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -25,6 +28,9 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
             <PropertyPhoto foto={imovel.foto} alt={imovel.endereco} tipo={imovel.tipo} />
             <span className="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-sm font-bold text-white">
               {imovel.desconto}% de desconto
+            </span>
+            <span className="absolute right-4 top-4 rounded-full bg-brand-dark px-3 py-1 text-sm font-bold text-white">
+              {ETAPA_LABEL[imovel.pipelineEtapa]}
             </span>
           </div>
 
@@ -73,7 +79,7 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
             </div>
             <div>
               <p className="text-xs text-muted">Leiloeiro</p>
-              <p className="font-semibold text-foreground">{imovel.leiloeiro}</p>
+              <p className="font-semibold text-foreground">{imovel.leiloeiro || "—"}</p>
             </div>
           </div>
 
@@ -98,9 +104,6 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
               <span className="font-medium text-foreground">Ocupação:</span>{" "}
               {imovel.ocupado ? "Imóvel ocupado" : "Imóvel desocupado"}
             </p>
-            <p className="mt-1">
-              <span className="font-medium text-foreground">Fonte:</span> {imovel.fonte}
-            </p>
           </div>
 
           {imovel.link && imovel.link !== "#" && (
@@ -110,15 +113,15 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
               rel="noopener noreferrer"
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand-dark"
             >
-              Ver edital oficial <ExternalLink size={15} />
+              Ver leilão original <ExternalLink size={15} />
             </a>
           )}
         </div>
 
         <div className="lg:sticky lg:top-20 lg:self-start">
           <ViabilityCalculator imovel={imovel} />
-          <EnviarParaAnalise id={imovel.id} />
-          <MarcarArrematado id={imovel.id} lanceMinimo={imovel.lance_minimo} />
+          <MarcarArrematado id={imovel.id} arrematado={arrematado} lanceMinimo={imovel.lance_minimo} />
+          <GerenciarImovel id={imovel.id} etapa={imovel.pipelineEtapa} />
         </div>
       </div>
     </div>

@@ -3,33 +3,10 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { ViabilidadeConfig } from "./types";
 
-export type Favorito = { id: string; addedAt: string };
-export type Arrematado = { id: string; precoArrematado: number; data: string };
-
-export const ETAPAS_PIPELINE = [
-  "nao_iniciada",
-  "financeiro",
-  "mercadologico",
-  "juridico",
-  "aprovado",
-  "cadastro",
-  "arrematado",
-  "nao_arrematado",
-  "reprovado",
-] as const;
-export type EtapaPipeline = (typeof ETAPAS_PIPELINE)[number];
-export const ETAPA_LABEL: Record<EtapaPipeline, string> = {
-  nao_iniciada: "Não iniciada",
-  financeiro: "Financeiro",
-  mercadologico: "Mercadológico",
-  juridico: "Jurídico",
-  aprovado: "Aprovado",
-  cadastro: "Cadastro",
-  arrematado: "Arrematado",
-  nao_arrematado: "Não arrematado",
-  reprovado: "Reprovado",
-};
-export type PipelineItem = { imovelId: string; etapa: EtapaPipeline; updatedAt: string };
+// Histórico local de simulações da calculadora ("Biblioteca de análises"). Isso
+// continua no navegador (não no Supabase) porque é só um bloco de notas pessoal
+// de simulações — o estado real dos imóveis (pipeline, arrematado, preço) mora no
+// banco desde a virada para cadastro manual.
 export type Analise = {
   uid: string;
   imovelId: string;
@@ -45,12 +22,7 @@ export type Analise = {
   cfg: ViabilidadeConfig;
 };
 
-const KEYS = {
-  favoritos: "radarleiloes:favoritos",
-  arrematados: "radarleiloes:arrematados",
-  analises: "radarleiloes:analises",
-  pipeline: "radarleiloes:pipeline",
-} as const;
+const KEY_ANALISES = "radarleiloes:analises";
 
 const snapshotCache = new Map<string, { raw: string | null; value: unknown[] }>();
 
@@ -86,62 +58,12 @@ function write<T>(key: string, value: T) {
   window.dispatchEvent(new StorageEvent("storage", { key }));
 }
 
-function useStoredList<T extends { id?: string; uid?: string }>(key: string) {
+export function useAnalises() {
   const items = useSyncExternalStore(
-    (callback) => subscribe(key, callback),
-    () => getSnapshot<T>(key),
+    (callback) => subscribe(KEY_ANALISES, callback),
+    () => getSnapshot<Analise>(KEY_ANALISES),
     getServerSnapshot
   );
-
-  const set = useCallback(
-    (next: T[]) => {
-      write(key, next);
-    },
-    [key]
-  );
-
-  return { items, set };
-}
-
-export function useFavoritos() {
-  const { items, set } = useStoredList<Favorito>(KEYS.favoritos);
-
-  const isFavorito = useCallback((id: string) => items.some((f) => f.id === id), [items]);
-
-  const toggle = useCallback(
-    (id: string) => {
-      if (items.some((f) => f.id === id)) {
-        set(items.filter((f) => f.id !== id));
-      } else {
-        set([...items, { id, addedAt: new Date().toISOString() }]);
-      }
-    },
-    [items, set]
-  );
-
-  return { favoritos: items, isFavorito, toggle };
-}
-
-export function useArrematados() {
-  const { items, set } = useStoredList<Arrematado>(KEYS.arrematados);
-
-  const isArrematado = useCallback((id: string) => items.some((a) => a.id === id), [items]);
-
-  const marcar = useCallback(
-    (id: string, precoArrematado: number) => {
-      const next = items.filter((a) => a.id !== id);
-      set([...next, { id, precoArrematado, data: new Date().toISOString() }]);
-    },
-    [items, set]
-  );
-
-  const desmarcar = useCallback((id: string) => set(items.filter((a) => a.id !== id)), [items, set]);
-
-  return { arrematados: items, isArrematado, marcar, desmarcar };
-}
-
-export function useAnalises() {
-  const { items, set } = useStoredList<Analise>(KEYS.analises);
 
   const salvar = useCallback(
     (analise: Omit<Analise, "uid" | "data">) => {
@@ -150,50 +72,14 @@ export function useAnalises() {
         uid: `${analise.imovelId}-${Date.now()}`,
         data: new Date().toISOString(),
       };
-      set([registro, ...items].slice(0, 50));
+      write(KEY_ANALISES, [registro, ...items].slice(0, 50));
     },
-    [items, set]
+    [items]
   );
 
-  const remover = useCallback((uid: string) => set(items.filter((a) => a.uid !== uid)), [items, set]);
+  const remover = useCallback((uid: string) => write(KEY_ANALISES, items.filter((a) => a.uid !== uid)), [items]);
 
-  const limpar = useCallback(() => set([]), [set]);
+  const limpar = useCallback(() => write(KEY_ANALISES, []), []);
 
   return { analises: items, salvar, remover, limpar };
-}
-
-function useStoredListPlain<T>(key: string) {
-  const items = useSyncExternalStore(
-    (callback) => subscribe(key, callback),
-    () => getSnapshot<T>(key),
-    getServerSnapshot
-  );
-  const set = useCallback((next: T[]) => write(key, next), [key]);
-  return { items, set };
-}
-
-export function usePipeline() {
-  const { items, set } = useStoredListPlain<PipelineItem>(KEYS.pipeline);
-
-  const etapaDe = useCallback((imovelId: string) => items.find((p) => p.imovelId === imovelId)?.etapa, [items]);
-
-  const adicionar = useCallback(
-    (imovelId: string, etapa: EtapaPipeline = "nao_iniciada") => {
-      if (items.some((p) => p.imovelId === imovelId)) return;
-      set([...items, { imovelId, etapa, updatedAt: new Date().toISOString() }]);
-    },
-    [items, set]
-  );
-
-  const mover = useCallback(
-    (imovelId: string, etapa: EtapaPipeline) => {
-      const next = items.map((p) => (p.imovelId === imovelId ? { ...p, etapa, updatedAt: new Date().toISOString() } : p));
-      set(next);
-    },
-    [items, set]
-  );
-
-  const remover = useCallback((imovelId: string) => set(items.filter((p) => p.imovelId !== imovelId)), [items, set]);
-
-  return { pipeline: items, etapaDe, adicionar, mover, remover };
 }

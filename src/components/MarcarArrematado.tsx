@@ -1,20 +1,32 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle2, Gavel, X } from "lucide-react";
-import { useArrematados } from "@/lib/storage";
 
-export default function MarcarArrematado({ id, lanceMinimo }: { id: string; lanceMinimo: number }) {
-  const { isArrematado, marcar, desmarcar } = useArrematados();
+export default function MarcarArrematado({ id, arrematado, lanceMinimo }: { id: string; arrematado: boolean; lanceMinimo: number }) {
+  const router = useRouter();
   const [editando, setEditando] = useState(false);
   const [preco, setPreco] = useState(lanceMinimo);
-  const arrematado = isArrematado(id);
+  const [salvando, setSalvando] = useState(false);
+
+  const atualizar = async (patch: Record<string, unknown>) => {
+    setSalvando(true);
+    await fetch(`/api/imoveis/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    setSalvando(false);
+    router.refresh();
+  };
 
   if (arrematado) {
     return (
       <button
-        onClick={() => desmarcar(id)}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-success/30 bg-success-bg px-4 py-2.5 text-sm font-semibold text-success hover:opacity-80"
+        onClick={() => atualizar({ pipeline_etapa: "nao_iniciada", preco_arrematado: null })}
+        disabled={salvando}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-success/30 bg-success-bg px-4 py-2.5 text-sm font-semibold text-success hover:opacity-80 disabled:opacity-60"
       >
         <CheckCircle2 size={16} /> Arrematado — clique para desmarcar
       </button>
@@ -32,11 +44,12 @@ export default function MarcarArrematado({ id, lanceMinimo }: { id: string; lanc
           placeholder="Preço de arremate (R$)"
         />
         <button
-          onClick={() => {
-            marcar(id, preco);
+          onClick={async () => {
+            await atualizar({ pipeline_etapa: "arrematado", preco_arrematado: preco });
             setEditando(false);
           }}
-          className="shrink-0 rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white"
+          disabled={salvando}
+          className="shrink-0 rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
           Confirmar
         </button>

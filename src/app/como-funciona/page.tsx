@@ -1,28 +1,28 @@
 import Link from "next/link";
-import { ArrowRight, Calculator, ClipboardCheck, Gavel, Search } from "lucide-react";
+import { ArrowRight, Calculator, ClipboardCheck, Gavel, LayoutGrid } from "lucide-react";
 
 export const metadata = { title: "Como Funciona — Radar Leilões" };
 
 const ETAPAS = [
   {
-    icon: Search,
-    title: "1. Busque e filtre",
-    desc: "Use os filtros de estado, cidade, tipo de imóvel e desconto mínimo para encontrar oportunidades que fazem sentido pra você. Os dados vêm de leiloeiros como Caixa, Santander e parceiros regionais.",
+    icon: LayoutGrid,
+    title: "1. Cadastre o imóvel",
+    desc: "Adicione o imóvel que te interessa com o link do leilão original (Caixa, leiloeiro, portal — onde você o encontrou) e os principais dados: avaliação, lance mínimo, tipo e data.",
   },
   {
     icon: Calculator,
     title: "2. Analise a viabilidade",
-    desc: "Cada imóvel tem uma calculadora própria: informe aluguel esperado, custo de reforma e pendências, e veja score de viabilidade, yield, ROI e payback estimados antes de decidir.",
+    desc: "Na ficha do imóvel, informe aluguel esperado, custo de reforma e pendências, e veja score de viabilidade, yield, ROI e payback estimados antes de decidir.",
   },
   {
     icon: Gavel,
-    title: "3. Dê o lance",
-    desc: "Acompanhe a data e a modalidade do leilão (judicial ou extrajudicial) e acesse o edital oficial do leiloeiro para participar do pregão com segurança.",
+    title: "3. Acompanhe pelo pipeline",
+    desc: "Mova o imóvel pelas etapas (financeiro, jurídico, aprovado...) até o lance, arrastando o card no painel Kanban.",
   },
   {
     icon: ClipboardCheck,
-    title: "4. Regularize o imóvel",
-    desc: "Depois de arrematar, cuidamos — se você quiser — da carta de arrematação, registro em cartório, baixa de gravames e, quando necessário, do processo de desocupação.",
+    title: "4. Marque como arrematado",
+    desc: "Depois de arrematar, registre o preço final — o imóvel passa a contar na sua Carteira, com projeção de patrimônio.",
   },
 ];
 
@@ -31,8 +31,8 @@ export default function ComoFuncionaPage() {
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold text-foreground">Como funciona</h1>
       <p className="mt-4 text-muted">
-        A Radar Leilões agrega oportunidades de imóveis em leilão de várias fontes e te dá as
-        ferramentas para decidir com dados, não com achismo.
+        O Radar Leilões é o seu painel pessoal para acompanhar imóveis de leilão que você
+        encontra em outras ferramentas — do interesse inicial até a arrematação.
       </p>
 
       <div className="mt-10 space-y-6">
@@ -50,10 +50,10 @@ export default function ComoFuncionaPage() {
       </div>
 
       <Link
-        href="/buscar"
+        href="/painel?tab=meus-imoveis"
         className="mt-10 inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand-dark"
       >
-        Começar a buscar <ArrowRight size={16} />
+        Ir para o painel <ArrowRight size={16} />
       </Link>
     </div>
   );

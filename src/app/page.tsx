@@ -1,137 +1,94 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BadgePercent,
   Calculator,
-  ClipboardCheck,
   FileSearch,
   Gavel,
   Handshake,
   KeyRound,
-  MapPinned,
+  LayoutGrid,
   ScrollText,
-  Search,
+  TrendingUp,
 } from "lucide-react";
-import { listImoveis } from "@/lib/imoveis-service";
-import PropertyCard from "@/components/PropertyCard";
-
-// Nunca deixa esta página ser pré-renderizada em build time: já vimos isso disparar
-// scrapes ao vivo reais durante `next build` (Supabase pausado no momento do build),
-// gastando crédito do Apify e quase estourando o timeout de geração estática do Next.
-export const dynamic = "force-dynamic";
 
 const SERVICOS = [
   {
     icon: FileSearch,
     title: "Análise de oportunidade",
-    desc: "Avaliamos valor de mercado, débitos e riscos jurídicos do imóvel antes do lance.",
+    desc: "Avalie valor de mercado, débitos e riscos jurídicos do imóvel antes do lance.",
   },
   {
     icon: Calculator,
     title: "Viabilidade financeira",
-    desc: "Simulação de custo total, financiamento e retorno esperado com a arrematação.",
+    desc: "Simule custo total, financiamento e retorno esperado com a arrematação.",
   },
   {
     icon: Gavel,
     title: "Acompanhamento do leilão",
-    desc: "Orientação sobre estratégia de lance no leilão judicial ou extrajudicial.",
+    desc: "Organize a estratégia de lance no leilão judicial ou extrajudicial.",
   },
   {
     icon: ScrollText,
     title: "Carta de arrematação",
-    desc: "Suporte na expedição da carta, registro e regularização do imóvel.",
+    desc: "Acompanhe a expedição da carta, registro e regularização do imóvel.",
   },
   {
     icon: KeyRound,
     title: "Desocupação",
-    desc: "Condução do processo de imissão na posse quando o imóvel está ocupado.",
+    desc: "Registre o andamento do processo de imissão na posse quando aplicável.",
   },
   {
     icon: Handshake,
-    title: "Assessoria completa",
-    desc: "Do lance à entrega das chaves, com equipe própria de advogados e gestores.",
+    title: "Do lance às chaves",
+    desc: "Um só lugar para acompanhar cada etapa, da análise à entrega das chaves.",
   },
 ];
 
 const PASSOS = [
-  { icon: Search, title: "Busque", desc: "Filtre imóveis de leilão por cidade, tipo e desconto." },
-  { icon: Calculator, title: "Analise", desc: "Use a calculadora de viabilidade para estimar retorno." },
-  { icon: Gavel, title: "Arremate", desc: "Dê o lance com segurança, com ou sem nossa assessoria." },
-  { icon: ClipboardCheck, title: "Regularize", desc: "Cuidamos da carta, registro e, se preciso, desocupação." },
+  { icon: LayoutGrid, title: "Cadastre", desc: "Adicione o imóvel de interesse com o link do leilão original." },
+  { icon: Calculator, title: "Analise", desc: "Use a calculadora de viabilidade para estimar o retorno." },
+  { icon: Gavel, title: "Arremate", desc: "Acompanhe o imóvel pelas etapas até o lance." },
+  { icon: TrendingUp, title: "Acompanhe", desc: "Veja o desempenho da sua carteira depois de arrematar." },
 ];
 
-export default async function HomePage() {
-  const { imoveis } = await listImoveis({ minDesconto: 40, limit: 4 });
-
+export default function HomePage() {
   return (
     <div>
       <section className="relative overflow-hidden bg-brand text-white">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              <BadgePercent size={14} /> Imóveis com até 70% de desconto
-            </span>
-            <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-              Encontre as melhores oportunidades em leilões de imóveis
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+              Seu painel pessoal de leilões de imóveis
             </h1>
             <p className="mt-4 text-lg text-white/80">
-              Agregamos leilões da Caixa, Santander, Itaú, Bradesco e leiloeiros parceiros em
-              todo o Brasil — com análise de viabilidade e assessoria completa da lance à escritura.
+              Cadastre os imóveis que você tem interesse em arrematar e os que já arrematou,
+              acompanhe cada um pelas etapas do processo e analise a viabilidade de cada
+              oportunidade — tudo em um só lugar.
             </p>
 
-            <form action="/buscar" className="mt-8 flex flex-col gap-3 rounded-xl bg-white p-3 sm:flex-row">
-              <input
-                name="cidade"
-                placeholder="Cidade, bairro ou estado"
-                className="flex-1 rounded-lg px-4 py-3 text-sm text-foreground outline-none"
-              />
-              <button
-                type="submit"
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/painel?tab=meus-imoveis"
                 className="flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-dark"
               >
-                <Search size={16} /> Buscar Imóveis
-              </button>
-            </form>
-
-            <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm text-white/70">
-              <span>500+ leiloeiros parceiros</span>
-              <span>Judicial e extrajudicial</span>
-              <span>Todo o Brasil</span>
+                <LayoutGrid size={16} /> Ir para o painel
+              </Link>
+              <Link
+                href="/painel?tab=calculadora"
+                className="flex items-center justify-center gap-2 rounded-lg bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+              >
+                <Calculator size={16} /> Calculadora de viabilidade
+              </Link>
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Oportunidades em destaque</h2>
-            <p className="mt-1 text-sm text-muted">Imóveis com maior desconto sobre a avaliação agora</p>
-          </div>
-          <Link href="/buscar" className="hidden items-center gap-1 text-sm font-semibold text-brand hover:underline sm:flex">
-            Ver todos <ArrowRight size={15} />
-          </Link>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {imoveis.map((im) => (
-            <PropertyCard key={im.id} imovel={im} />
-          ))}
-        </div>
-
-        <Link
-          href="/buscar"
-          className="mt-6 flex items-center justify-center gap-1 text-sm font-semibold text-brand hover:underline sm:hidden"
-        >
-          Ver todos <ArrowRight size={15} />
-        </Link>
       </section>
 
       <section className="bg-muted-bg py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-foreground">Como funciona</h2>
-            <p className="mt-1 text-sm text-muted">Do primeiro filtro até as chaves na mão</p>
+            <p className="mt-1 text-sm text-muted">Do cadastro ao acompanhamento pós-arremate</p>
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -151,9 +108,9 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground">Assessoria completa, se você preferir não ir sozinho</h2>
+          <h2 className="text-2xl font-bold text-foreground">O que dá para acompanhar</h2>
           <p className="mx-auto mt-1 max-w-xl text-sm text-muted">
-            Nossa equipe cuida de cada etapa do processo de arrematação, da análise jurídica à desocupação.
+            Cada etapa do processo de arrematação organizada num painel só.
           </p>
         </div>
 
@@ -173,16 +130,14 @@ export default async function HomePage() {
       <section className="bg-brand-dark">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 py-16 text-center sm:px-6 lg:flex-row lg:justify-between lg:text-left lg:px-8">
           <div>
-            <h2 className="text-2xl font-bold text-white">Pronto para encontrar sua próxima oportunidade?</h2>
-            <p className="mt-1 flex items-center justify-center gap-1.5 text-sm text-white/70 lg:justify-start">
-              <MapPinned size={15} /> Busque agora entre milhares de imóveis de leilão em todo o Brasil.
-            </p>
+            <h2 className="text-2xl font-bold text-white">Pronto para organizar seus leilões?</h2>
+            <p className="mt-1 text-sm text-white/70">Adicione o primeiro imóvel e comece a acompanhar.</p>
           </div>
           <Link
-            href="/buscar"
+            href="/painel?tab=meus-imoveis"
             className="flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-dark"
           >
-            Buscar Imóveis <ArrowRight size={16} />
+            Ir para o painel <ArrowRight size={16} />
           </Link>
         </div>
       </section>

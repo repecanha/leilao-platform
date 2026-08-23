@@ -98,6 +98,8 @@ export default function CalculadoraTab() {
       foto: null,
       pendencias: Array.from({ length: numPendencias }, (_, i) => `Pendência ${i + 1}`),
       desconto: avaliacao > 0 ? Math.round((1 - lance / avaliacao) * 100) : 0,
+      pipelineEtapa: "nao_iniciada",
+      precoArrematado: null,
     }),
     [tipo, tituloCarregado, avaliacao, lance, modalidade, ocupado, numPendencias]
   );

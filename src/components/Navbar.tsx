@@ -5,11 +5,10 @@ import { useState } from "react";
 import { Gavel, Menu, X } from "lucide-react";
 
 const LINKS = [
-  { href: "/buscar", label: "Buscar Imóveis" },
-  { href: "/painel", label: "Painel do Investidor" },
+  { href: "/painel?tab=meus-imoveis", label: "Meus Imóveis" },
+  { href: "/painel?tab=calculadora", label: "Calculadora" },
+  { href: "/painel?tab=carteira", label: "Carteira" },
   { href: "/como-funciona", label: "Como Funciona" },
-  { href: "/sobre", label: "Sobre" },
-  { href: "/contato", label: "Contato" },
 ];
 
 export default function Navbar() {
@@ -37,10 +36,10 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-3 md:flex">
           <Link
-            href="/buscar"
+            href="/painel?tab=meus-imoveis"
             className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
           >
-            Buscar Agora
+            Ir para o painel
           </Link>
         </div>
 
@@ -65,11 +64,11 @@ export default function Navbar() {
             ))}
             <li>
               <Link
-                href="/buscar"
+                href="/painel?tab=meus-imoveis"
                 onClick={() => setOpen(false)}
                 className="mt-2 block rounded-lg bg-brand px-3 py-2 text-center text-sm font-semibold text-white"
               >
-                Buscar Agora
+                Ir para o painel
               </Link>
             </li>
           </ul>

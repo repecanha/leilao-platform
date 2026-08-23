@@ -1,72 +1,108 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LayoutGrid, List, X } from "lucide-react";
+import { LayoutGrid, List, Loader2, X } from "lucide-react";
 import { Imovel } from "@/lib/types";
 import { fmt } from "@/lib/format";
-import { ETAPAS_PIPELINE, ETAPA_LABEL, EtapaPipeline, usePipeline } from "@/lib/storage";
+import { ETAPAS_PIPELINE, ETAPA_LABEL, EtapaPipeline } from "@/lib/types";
+import AdicionarImovelModal from "./AdicionarImovelModal";
 
-export default function KanbanBoard({ imoveis }: { imoveis: Imovel[] }) {
-  const { pipeline, mover, remover } = usePipeline();
+export default function KanbanBoard() {
+  const [imoveis, setImoveis] = useState<Imovel[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [view, setView] = useState<"kanban" | "lista">("kanban");
   const [dragId, setDragId] = useState<string | null>(null);
 
-  const registros = pipeline
-    .map((p) => ({ p, im: imoveis.find((i) => i.id === p.imovelId) }))
-    .filter((r): r is { p: (typeof pipeline)[number]; im: Imovel } => !!r.im);
+  useEffect(() => {
+    fetch("/api/imoveis")
+      .then((r) => r.json())
+      .then((data) => {
+        setImoveis(data.imoveis ?? []);
+        setCarregando(false);
+      });
+  }, []);
+
+  const carregar = useCallback(async () => {
+    const res = await fetch("/api/imoveis");
+    const data = await res.json();
+    setImoveis(data.imoveis ?? []);
+  }, []);
+
+  const mover = async (id: string, etapa: EtapaPipeline) => {
+    setImoveis((prev) => prev.map((im) => (im.id === id ? { ...im, pipelineEtapa: etapa } : im)));
+    await fetch(`/api/imoveis/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pipeline_etapa: etapa }),
+    });
+  };
+
+  const remover = async (id: string) => {
+    setImoveis((prev) => prev.filter((im) => im.id !== id));
+    await fetch(`/api/imoveis/${id}`, { method: "DELETE" });
+  };
 
   const handleDrop = (etapa: EtapaPipeline) => {
     if (dragId) mover(dragId, etapa);
     setDragId(null);
   };
 
-  if (registros.length === 0) {
+  if (carregando) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-muted">
+        <Loader2 className="animate-spin" size={20} /> Carregando seus imóveis...
+      </div>
+    );
+  }
+
+  if (imoveis.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card py-20 text-center text-muted">
         <LayoutGrid size={28} />
-        <p className="font-medium">Nenhum imóvel em análise</p>
-        <p className="text-sm">
-          Na ficha de um imóvel, use “Enviar para análise” para começar a acompanhar aqui.
-        </p>
-        <Link href="/buscar" className="mt-2 text-sm font-semibold text-brand hover:underline">
-          Buscar imóveis
-        </Link>
+        <p className="font-medium">Nenhum imóvel cadastrado ainda</p>
+        <p className="text-sm">Adicione o imóvel que você tem interesse em arrematar, com o link do leilão.</p>
+        <div className="mt-3">
+          <AdicionarImovelModal onCriado={carregar} />
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-foreground">Pipeline de Análises</h2>
-          <p className="text-sm text-muted">{registros.length} imóveis · arraste os cards entre as etapas</p>
+          <h2 className="text-lg font-bold text-foreground">Meus Imóveis</h2>
+          <p className="text-sm text-muted">{imoveis.length} imóveis · arraste os cards entre as etapas</p>
         </div>
-        <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
-          <button
-            onClick={() => setView("kanban")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-              view === "kanban" ? "bg-brand text-white" : "text-muted hover:bg-muted-bg"
-            }`}
-          >
-            <LayoutGrid size={13} /> Kanban
-          </button>
-          <button
-            onClick={() => setView("lista")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-              view === "lista" ? "bg-brand text-white" : "text-muted hover:bg-muted-bg"
-            }`}
-          >
-            <List size={13} /> Lista
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 rounded-lg border border-border bg-card p-1">
+            <button
+              onClick={() => setView("kanban")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
+                view === "kanban" ? "bg-brand text-white" : "text-muted hover:bg-muted-bg"
+              }`}
+            >
+              <LayoutGrid size={13} /> Kanban
+            </button>
+            <button
+              onClick={() => setView("lista")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
+                view === "lista" ? "bg-brand text-white" : "text-muted hover:bg-muted-bg"
+              }`}
+            >
+              <List size={13} /> Lista
+            </button>
+          </div>
+          <AdicionarImovelModal onCriado={carregar} />
         </div>
       </div>
 
       {view === "kanban" ? (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {ETAPAS_PIPELINE.map((etapa) => {
-            const cards = registros.filter((r) => r.p.etapa === etapa);
+            const cards = imoveis.filter((im) => im.pipelineEtapa === etapa);
             return (
               <div
                 key={etapa}
@@ -85,11 +121,11 @@ export default function KanbanBoard({ imoveis }: { imoveis: Imovel[] }) {
                   {cards.length === 0 && (
                     <p className="px-1 py-4 text-center text-[11px] text-muted">Nenhum imóvel nesta etapa</p>
                   )}
-                  {cards.map(({ p, im }) => (
+                  {cards.map((im) => (
                     <div
-                      key={p.imovelId}
+                      key={im.id}
                       draggable
-                      onDragStart={() => setDragId(p.imovelId)}
+                      onDragStart={() => setDragId(im.id)}
                       className="group cursor-grab rounded-lg border border-border bg-card p-2.5 text-xs shadow-sm active:cursor-grabbing"
                     >
                       <div className="flex items-start justify-between gap-1">
@@ -99,7 +135,7 @@ export default function KanbanBoard({ imoveis }: { imoveis: Imovel[] }) {
                         <button
                           onClick={() => remover(im.id)}
                           className="shrink-0 text-muted opacity-0 hover:text-danger group-hover:opacity-100"
-                          aria-label="Remover do pipeline"
+                          aria-label="Excluir"
                         >
                           <X size={12} />
                         </button>
@@ -127,8 +163,8 @@ export default function KanbanBoard({ imoveis }: { imoveis: Imovel[] }) {
               </tr>
             </thead>
             <tbody>
-              {registros.map(({ p, im }) => (
-                <tr key={p.imovelId} className="border-b border-border last:border-0">
+              {imoveis.map((im) => (
+                <tr key={im.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3">
                     <Link href={`/imovel/${im.id}`} className="font-medium text-foreground hover:text-brand">
                       {im.endereco}
@@ -139,7 +175,7 @@ export default function KanbanBoard({ imoveis }: { imoveis: Imovel[] }) {
                   </td>
                   <td className="px-4 py-3">
                     <select
-                      value={p.etapa}
+                      value={im.pipelineEtapa}
                       onChange={(e) => mover(im.id, e.target.value as EtapaPipeline)}
                       className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
                     >
@@ -152,7 +188,7 @@ export default function KanbanBoard({ imoveis }: { imoveis: Imovel[] }) {
                   </td>
                   <td className="px-4 py-3 font-semibold text-brand">{fmt(im.lance_minimo)}</td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => remover(im.id)} className="text-muted hover:text-danger" aria-label="Remover">
+                    <button onClick={() => remover(im.id)} className="text-muted hover:text-danger" aria-label="Excluir">
                       <X size={14} />
                     </button>
                   </td>

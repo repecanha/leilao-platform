@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listImoveis } from "@/lib/imoveis-service";
+import { criarImovel, listImoveis } from "@/lib/imoveis-service";
 
 export async function GET(req: NextRequest) {
   try {
     const sp = req.nextUrl.searchParams;
     const payload = await listImoveis({
       estado: sp.get("estado") || undefined,
-      cidade: sp.get("cidade") || undefined,
       tipo: sp.get("tipo") || undefined,
-      minDesconto: sp.has("minDesconto") ? Number(sp.get("minDesconto")) : undefined,
-      maxLance: sp.has("maxLance") ? Number(sp.get("maxLance")) : undefined,
-      fonte: sp.get("fonte") || undefined,
-      page: sp.has("page") ? Number(sp.get("page")) : undefined,
-      limit: sp.has("limit") ? Number(sp.get("limit")) : undefined,
     });
     return NextResponse.json(payload);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro desconhecido";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    if (!body.tipo || !body.endereco || !body.cidade || !body.estado || !body.link) {
+      return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
+    }
+    const imovel = await criarImovel(body);
+    return NextResponse.json(imovel, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro desconhecido";
     return NextResponse.json({ error: message }, { status: 500 });

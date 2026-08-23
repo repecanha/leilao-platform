@@ -1,5 +1,29 @@
 export type Modalidade = "Judicial" | "Extrajudicial";
 
+export const ETAPAS_PIPELINE = [
+  "nao_iniciada",
+  "financeiro",
+  "mercadologico",
+  "juridico",
+  "aprovado",
+  "cadastro",
+  "arrematado",
+  "nao_arrematado",
+  "reprovado",
+] as const;
+export type EtapaPipeline = (typeof ETAPAS_PIPELINE)[number];
+export const ETAPA_LABEL: Record<EtapaPipeline, string> = {
+  nao_iniciada: "Não iniciada",
+  financeiro: "Financeiro",
+  mercadologico: "Mercadológico",
+  juridico: "Jurídico",
+  aprovado: "Aprovado",
+  cadastro: "Cadastro",
+  arrematado: "Arrematado",
+  nao_arrematado: "Não arrematado",
+  reprovado: "Reprovado",
+};
+
 export type Imovel = {
   id: string;
   fonte: string;
@@ -25,6 +49,8 @@ export type Imovel = {
   desconto: number;
   lat?: number;
   lng?: number;
+  pipelineEtapa: EtapaPipeline;
+  precoArrematado: number | null;
 };
 
 export type ImoveisQuery = {
