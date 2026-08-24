@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { Briefcase, Calculator, Handshake, LayoutGrid } from "lucide-react";
+import { Briefcase, Calculator, Handshake, Landmark, LayoutGrid } from "lucide-react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import KanbanBoard from "./KanbanBoard";
 import CalculadoraTab from "./CalculadoraTab";
+import FinanciamentoTab from "./FinanciamentoTab";
 import CarteiraTab from "./CarteiraTab";
 import ServicosTab from "./ServicosTab";
 
 export const TABS = [
   { id: "meus-imoveis", label: "Meus Imóveis", icon: LayoutGrid },
   { id: "calculadora", label: "Calculadora", icon: Calculator },
+  { id: "financiamento", label: "Financiamento", icon: Landmark },
   { id: "carteira", label: "Carteira", icon: Briefcase },
   { id: "servicos", label: "Serviços", icon: Handshake },
 ] as const;
@@ -39,6 +41,7 @@ export default function PainelShell({ tab }: { tab: TabId }) {
       <ErrorBoundary label={tab}>
         {tab === "meus-imoveis" && <KanbanBoard />}
         {tab === "calculadora" && <CalculadoraTab />}
+        {tab === "financiamento" && <FinanciamentoTab />}
         {tab === "carteira" && <CarteiraTab />}
         {tab === "servicos" && <ServicosTab />}
       </ErrorBoundary>
