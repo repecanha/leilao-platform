@@ -8,6 +8,7 @@ export type NoticiaItem = {
   resumo: string;
   link: string;
   publicadoEm: string | null;
+  imagemUrl: string | null;
 };
 
 type TipoFonte = "institucional" | "imprensa";
@@ -97,6 +98,34 @@ function extrairLink(campo: unknown): string {
   return "";
 }
 
+function primeiraTag<T = Record<string, unknown>>(campo: unknown): T | null {
+  if (!campo) return null;
+  return (Array.isArray(campo) ? campo[0] : campo) as T;
+}
+
+// Imagem da matéria: tenta, nesta ordem, o <enclosure> padrão RSS, o
+// namespace Media RSS (<media:content>/<media:thumbnail>, comum em feeds
+// WordPress) e, por fim, a primeira <img> dentro do HTML do conteúdo/resumo.
+function extrairImagem(entry: Record<string, unknown>): string | null {
+  const enclosure = primeiraTag<Record<string, string>>(entry.enclosure);
+  if (enclosure?.["@_url"] && (!enclosure["@_type"] || enclosure["@_type"].startsWith("image"))) {
+    return enclosure["@_url"];
+  }
+
+  const media = primeiraTag<Record<string, string>>(entry["media:content"] ?? entry["media:thumbnail"]);
+  if (media?.["@_url"]) return media["@_url"];
+
+  const conteudo = (entry["content:encoded"] ?? entry.description ?? entry.summary ?? entry.content) as
+    | string
+    | undefined;
+  if (typeof conteudo === "string") {
+    const match = conteudo.match(/<img[^>]+src=["']([^"'\s]+)["']/i);
+    if (match) return match[1];
+  }
+
+  return null;
+}
+
 function parseData(entry: Record<string, unknown>): string | null {
   const bruto = (entry.pubDate ?? entry.published ?? entry.updated ?? entry["dc:date"]) as string | undefined;
   if (!bruto) return null;
@@ -159,6 +188,7 @@ async function buscarFonte(fonte: Fonte): Promise<NoticiaItem[]> {
         resumo: resumir(resumoBruto),
         link,
         publicadoEm: parseData(entry),
+        imagemUrl: extrairImagem(entry),
       });
     }
     return itens;
