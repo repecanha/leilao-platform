@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/painel?tab=meus-imoveis", label: "Meus Imóveis" },
   { href: "/painel?tab=calculadora", label: "Calculadora" },
   { href: "/painel?tab=carteira", label: "Carteira" },
+  { href: "/noticias", label: "Notícias" },
   { href: "/como-funciona", label: "Como Funciona" },
 ];
 

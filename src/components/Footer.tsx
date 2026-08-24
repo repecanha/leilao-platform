@@ -25,6 +25,7 @@ export default function Footer() {
             <li><Link href="/painel?tab=meus-imoveis" className="hover:text-white">Meus Imóveis</Link></li>
             <li><Link href="/painel?tab=calculadora" className="hover:text-white">Calculadora de Viabilidade</Link></li>
             <li><Link href="/painel?tab=carteira" className="hover:text-white">Carteira</Link></li>
+            <li><Link href="/noticias" className="hover:text-white">Notícias</Link></li>
             <li><Link href="/como-funciona" className="hover:text-white">Como Funciona</Link></li>
           </ul>
         </div>
