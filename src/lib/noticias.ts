@@ -22,9 +22,16 @@ type Fonte = { nome: string; url: string; tipo: TipoFonte };
 const FONTES: Fonte[] = [
   { nome: "SECOVI-SP", url: "https://secovi.com.br/feed/", tipo: "institucional" },
   { nome: "CBIC", url: "https://cbic.org.br/feed/", tipo: "institucional" },
+  // Feed de tag dedicado a mercado imobiliário — já 100% no assunto, sem
+  // precisar do filtro de palavra-chave (confirmado inspecionando os títulos).
+  { nome: "InfoMoney", url: "https://www.infomoney.com.br/tudo-sobre/mercado-imobiliario/feed/", tipo: "institucional" },
   { nome: "Folha de S.Paulo", url: "https://feeds.folha.uol.com.br/mercado/rss091.xml", tipo: "imprensa" },
   { nome: "Valor Econômico", url: "https://valor.globo.com/rss/valor/", tipo: "imprensa" },
   { nome: "Exame", url: "https://exame.com/feed/", tipo: "imprensa" },
+  { nome: "UOL Economia", url: "https://rss.uol.com.br/feed/economia.xml", tipo: "imprensa" },
+  { nome: "Estadão", url: "https://www.estadao.com.br/arc/outboundfeeds/feeds/rss/sections/economia/", tipo: "imprensa" },
+  { nome: "Brazil Journal", url: "https://braziljournal.com/feed/", tipo: "imprensa" },
+  { nome: "Money Times", url: "https://www.moneytimes.com.br/feed/", tipo: "imprensa" },
 ];
 
 const PALAVRAS_CHAVE = [
@@ -33,6 +40,7 @@ const PALAVRAS_CHAVE = [
   "aluguel", "locação", "loteamento", "condomín",
   "minha casa minha vida", "financiamento imobiliário",
   "leilão de imóve", "vgv", "cub ", "selic",
+  "ifix", " fii", "fundo imobiliário", "fundos imobiliários",
 ];
 
 const MAX_POR_FONTE = 30;
@@ -137,14 +145,18 @@ function parseData(entry: Record<string, unknown>): string | null {
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
 
 // Alguns feeds brasileiros ainda declaram ISO-8859-1/Windows-1252 em vez de
-// UTF-8. `fetch().text()` sempre decodifica como UTF-8, então lemos os bytes
-// crus e detectamos o charset real pela declaração <?xml ... encoding="..."?>
+// UTF-8 — às vezes só no header HTTP (ex: UOL: "Content-Type: text/xml;
+// charset=ISO-8859-1", sem declaração no próprio XML), às vezes só na
+// declaração <?xml ... encoding="..."?> (ex: Folha). `fetch().text()` sempre
+// decodifica como UTF-8, então lemos os bytes crus e checamos as duas fontes
 // antes de decodificar — senão acentos viram caracteres corrompidos.
 async function decodificarXml(res: Response): Promise<string> {
   const buffer = await res.arrayBuffer();
   const bytes = new Uint8Array(buffer);
+  const charsetHeader = res.headers.get("content-type")?.match(/charset=([^;]+)/i)?.[1];
   const preview = new TextDecoder("ascii").decode(bytes.slice(0, 200));
-  const charset = preview.match(/encoding=["']([^"']+)["']/i)?.[1]?.toLowerCase() || "utf-8";
+  const charsetXml = preview.match(/encoding=["']([^"']+)["']/i)?.[1];
+  const charset = (charsetHeader ?? charsetXml ?? "utf-8").trim().toLowerCase();
   try {
     return new TextDecoder(charset).decode(bytes);
   } catch {
