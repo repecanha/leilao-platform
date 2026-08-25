@@ -38,6 +38,7 @@ const PALAVRAS_CHAVE = [
 const MAX_POR_FONTE = 30;
 const LIMITE_RESUMO = 280;
 const REVALIDATE_SEGUNDOS = 3600;
+export const TAG_NOTICIAS = "noticias";
 
 function bateComPalavraChave(texto: string): boolean {
   const alvo = texto.toLowerCase();
@@ -155,7 +156,7 @@ async function buscarFonte(fonte: Fonte): Promise<NoticiaItem[]> {
   try {
     const res = await fetch(fonte.url, {
       headers: { "User-Agent": "RadarLeiloesBot/1.0 (agregador de noticias do setor imobiliario)" },
-      next: { revalidate: REVALIDATE_SEGUNDOS },
+      next: { revalidate: REVALIDATE_SEGUNDOS, tags: [TAG_NOTICIAS] },
     });
     if (!res.ok) {
       console.warn(`[noticias] ${fonte.nome}: HTTP ${res.status}`);
