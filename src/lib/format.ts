@@ -16,5 +16,13 @@ export const fmtShort = (v: number) => {
 
 export const fmtData = (d: string | null) => {
   if (!d) return "A definir";
-  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  // Datas "somente data" (yyyy-mm-dd, ex: data_leilao, lançamentos do livro
+  // caixa) são interpretadas pelo Date() como UTC meia-noite; formatá-las no
+  // fuso local pode voltar um dia. Para essas, monta o Date a partir dos
+  // componentes locais em vez de fazer o round-trip por UTC.
+  const somenteData = /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const data = somenteData
+    ? new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)))
+    : new Date(d);
+  return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 };

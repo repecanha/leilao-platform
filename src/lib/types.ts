@@ -53,6 +53,48 @@ export type Imovel = {
   precoArrematado: number | null;
 };
 
+export const CATEGORIAS_LANCAMENTO = [
+  "parcela_arrematacao",
+  "reforma",
+  "cartorio",
+  "itbi",
+  "condominio",
+  "iptu",
+  "advogado",
+  "corretor",
+  "imposto_renda",
+  "receita_venda",
+  "outras_despesas",
+  "outras_receitas",
+] as const;
+export type CategoriaLancamento = (typeof CATEGORIAS_LANCAMENTO)[number];
+export const CATEGORIA_LABEL: Record<CategoriaLancamento, string> = {
+  parcela_arrematacao: "Parcela da arrematação",
+  reforma: "Reforma",
+  cartorio: "Cartório",
+  itbi: "ITBI",
+  condominio: "Condomínio",
+  iptu: "IPTU",
+  advogado: "Advogado",
+  corretor: "Corretor",
+  imposto_renda: "Imposto de renda",
+  receita_venda: "Receita de venda",
+  outras_despesas: "Outras despesas",
+  outras_receitas: "Outras receitas",
+};
+// Categorias que representam entrada de caixa (receita); todo o resto é despesa.
+export const CATEGORIAS_RECEITA: CategoriaLancamento[] = ["receita_venda", "outras_receitas"];
+
+export type Lancamento = {
+  id: string;
+  imovelId: string;
+  data: string;
+  categoria: CategoriaLancamento;
+  descricao: string;
+  valor: number;
+  criadoEm: string;
+};
+
 export type ImoveisQuery = {
   estado?: string;
   cidade?: string;

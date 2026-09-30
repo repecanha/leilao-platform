@@ -8,6 +8,7 @@ import ViabilityCalculator from "@/components/ViabilityCalculator";
 import MarcarArrematado from "@/components/MarcarArrematado";
 import GerenciarImovel from "@/components/GerenciarImovel";
 import PropertyPhoto from "@/components/PropertyPhoto";
+import LivroCaixa from "@/components/LivroCaixa";
 
 export default async function ImovelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -124,6 +125,8 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
           <GerenciarImovel id={imovel.id} etapa={imovel.pipelineEtapa} />
         </div>
       </div>
+
+      {arrematado && <LivroCaixa imovelId={imovel.id} />}
     </div>
   );
 }
