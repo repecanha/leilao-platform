@@ -86,7 +86,7 @@ export default function LivroCaixa({ imovelId }: { imovelId: string }) {
   const { lancamentos, resumo, cdiAcumulado } = resposta;
 
   return (
-    <div className="mt-8">
+    <div>
       <div className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
         <BookOpen size={18} className="text-brand" /> Livro Caixa
       </div>

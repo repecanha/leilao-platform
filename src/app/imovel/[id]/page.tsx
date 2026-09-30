@@ -126,7 +126,11 @@ export default async function ImovelPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      {arrematado && <LivroCaixa imovelId={imovel.id} />}
+      {arrematado && (
+        <div className="mt-8">
+          <LivroCaixa imovelId={imovel.id} />
+        </div>
+      )}
     </div>
   );
 }
