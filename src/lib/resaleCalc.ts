@@ -37,6 +37,11 @@ export type CustosRegularizacao = {
 
   modoIR: ModoImpostoRenda;
   irManual: number;
+
+  // Custo de oportunidade: quanto o capital exposto ao negócio renderia se
+  // investido a essa taxa (ex: CDI) durante o mesmo período, em vez de ficar
+  // parado na operação.
+  taxaOportunidadeAnual: number;
 };
 
 export const DEFAULT_CUSTOS: Omit<CustosRegularizacao, "valorArrematacao" | "valorVenda"> = {
@@ -62,9 +67,16 @@ export const DEFAULT_CUSTOS: Omit<CustosRegularizacao, "valorArrematacao" | "val
   condominioMensal: 0,
   modoIR: "auto",
   irManual: 0,
+  taxaOportunidadeAnual: 10,
 };
 
 export type ResultadoRevenda = {
+  escrituraRS: number;
+  itbiRS: number;
+  registroRS: number;
+  assessoriaAquisicaoRS: number;
+  corretagemVendaRS: number;
+  assessoriaVendaRS: number;
   custosAquisicaoDedutiveis: number;
   custosAquisicaoNaoDedutiveis: number;
   custosVendaDedutiveis: number;
@@ -73,6 +85,7 @@ export type ResultadoRevenda = {
   custoMensalTotal: number;
   entrada: number;
   exposicaoDeCaixa: number;
+  perdaRentabilidade: number;
   custoTotal: number;
   ganhoCapitalTributavel: number;
   impostoRenda: number;
@@ -101,6 +114,22 @@ export function calcRevenda(c: CustosRegularizacao): ResultadoRevenda {
   const totalDebitosPontuais = c.desocupacao + c.gravames + c.outrosCustos + c.iptuArrematante + c.condominioArrematante + c.outrosDebitos;
   const custoMensalTotal = (c.iptuMensal + c.condominioMensal) * Math.max(0, c.periodoRevendaMeses);
 
+  const entrada =
+    c.modalidadePagamento === "avista"
+      ? c.valorArrematacao
+      : c.valorArrematacao * (Math.min(100, Math.max(0, c.percentualEntrada)) / 100);
+  const exposicaoDeCaixa = entrada + custosAquisicaoDedutiveis + custosAquisicaoNaoDedutiveis + totalDebitosPontuais + custoMensalTotal;
+
+  const anos = Math.max(0, c.periodoRevendaMeses) / 12;
+  const perdaRentabilidade = exposicaoDeCaixa * (Math.pow(1 + c.taxaOportunidadeAnual / 100, anos) - 1);
+
+  const baseDedutivel = c.valorArrematacao + custosAquisicaoDedutiveis + custosVendaDedutiveis;
+  const ganhoCapitalTributavel = Math.max(0, c.valorVenda - baseDedutivel);
+  const irAuto = ganhoCapitalTributavel * 0.15;
+  const impostoRenda = c.modoIR === "manual" ? Math.max(0, c.irManual) : irAuto;
+
+  // custoTotal soma TODOS os custos, incluindo o IR — é o "total desembolso"
+  // exibido no resumo, e a soma de cada linha ali deve bater com esse total.
   const custoTotal =
     c.valorArrematacao +
     custosAquisicaoDedutiveis +
@@ -108,25 +137,22 @@ export function calcRevenda(c: CustosRegularizacao): ResultadoRevenda {
     custosVendaDedutiveis +
     custosVendaNaoDedutiveis +
     totalDebitosPontuais +
-    custoMensalTotal;
+    custoMensalTotal +
+    perdaRentabilidade +
+    impostoRenda;
 
-  const entrada =
-    c.modalidadePagamento === "avista"
-      ? c.valorArrematacao
-      : c.valorArrematacao * (Math.min(100, Math.max(0, c.percentualEntrada)) / 100);
-  const exposicaoDeCaixa = entrada + custosAquisicaoDedutiveis + custosAquisicaoNaoDedutiveis + totalDebitosPontuais + custoMensalTotal;
-
-  const baseDedutivel = c.valorArrematacao + custosAquisicaoDedutiveis + custosVendaDedutiveis;
-  const ganhoCapitalTributavel = Math.max(0, c.valorVenda - baseDedutivel);
-  const irAuto = ganhoCapitalTributavel * 0.15;
-  const impostoRenda = c.modoIR === "manual" ? Math.max(0, c.irManual) : irAuto;
-
-  const lucroLiquido = c.valorVenda - custoTotal - impostoRenda;
+  const lucroLiquido = c.valorVenda - custoTotal;
   const roi = exposicaoDeCaixa > 0 ? (lucroLiquido / exposicaoDeCaixa) * 100 : 0;
   const meses = Math.max(1, c.periodoRevendaMeses);
   const roiAnualizado = (Math.pow(1 + roi / 100, 12 / meses) - 1) * 100;
 
   return {
+    escrituraRS,
+    itbiRS,
+    registroRS,
+    assessoriaAquisicaoRS,
+    corretagemVendaRS,
+    assessoriaVendaRS,
     custosAquisicaoDedutiveis,
     custosAquisicaoNaoDedutiveis,
     custosVendaDedutiveis,
@@ -135,6 +161,7 @@ export function calcRevenda(c: CustosRegularizacao): ResultadoRevenda {
     custoMensalTotal,
     entrada,
     exposicaoDeCaixa,
+    perdaRentabilidade,
     custoTotal,
     ganhoCapitalTributavel,
     impostoRenda,

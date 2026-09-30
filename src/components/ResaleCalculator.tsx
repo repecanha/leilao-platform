@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Banknote, Building2, FileWarning, Home, Receipt, ReceiptText } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Banknote, Building2, FileWarning, Home, Receipt, ReceiptText, TrendingDown } from "lucide-react";
 import {
   calcRevenda,
   CustosRegularizacao,
@@ -53,6 +53,15 @@ export default function ResaleCalculator({
 
   const set = <K extends keyof CustosRegularizacao>(key: K, value: CustosRegularizacao[K]) =>
     setC((prev) => ({ ...prev, [key]: value }));
+
+  const taxaTocada = useRef(false);
+  useEffect(() => {
+    fetch("/api/cdi")
+      .then((r) => r.json())
+      .then((json) => {
+        if (!taxaTocada.current) setC((prev) => ({ ...prev, taxaOportunidadeAnual: json.taxaAnual }));
+      });
+  }, []);
 
   const r = useMemo(() => calcRevenda(c), [c]);
 
@@ -341,47 +350,77 @@ export default function ResaleCalculator({
             marcados acima) — regra padrão de pessoa física. Consulte um contador para PJ ou casos de isenção.
           </p>
         </div>
+
+        <div className={CARD_CLS}>
+          <CardHeader icon={TrendingDown} title="Custo de oportunidade" />
+          <label className={LABEL_CLS}>Taxa de referência (% a.a.)</label>
+          <input
+            type="number"
+            step={0.1}
+            value={c.taxaOportunidadeAnual}
+            onChange={(e) => {
+              taxaTocada.current = true;
+              set("taxaOportunidadeAnual", Number(e.target.value) || 0);
+            }}
+            className={INPUT_CLS}
+          />
+          <p className="mt-2 text-[11px] leading-relaxed text-muted">
+            Pré-preenchido com o CDI acumulado dos últimos 12 meses (fonte: Banco Central). Representa o quanto
+            o capital exposto à operação renderia nesse período se investido a essa taxa em vez de parado no
+            negócio — entra como &ldquo;Perda de rentabilidade&rdquo; no resumo.
+          </p>
+        </div>
       </div>
 
       <div className="h-fit space-y-4 lg:sticky lg:top-4">
+        <div className={`rounded-xl border border-border p-5 ${r.roi >= 0 ? "bg-success-bg" : "bg-danger-bg"}`}>
+          <p className="text-xs text-muted">Resultado da margem</p>
+          <div className="mt-1 flex items-end justify-between gap-3">
+            <p className={`text-3xl font-extrabold ${r.roi >= 0 ? "text-success" : "text-danger"}`}>{fmtN(r.roi)}%</p>
+            <p className={`text-lg font-semibold ${r.lucroLiquido >= 0 ? "text-success" : "text-danger"}`}>
+              {fmt(r.lucroLiquido)}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 divide-x divide-border rounded-xl border border-border bg-card text-sm">
+          <div className="px-4 py-3">
+            <p className="text-xs text-muted">Exposição de caixa</p>
+            <p className="font-semibold text-foreground">{fmt(r.exposicaoDeCaixa)}</p>
+          </div>
+          <div className="px-4 py-3">
+            <span className="text-xs text-muted">ROI anualizado</span>
+            <p className="font-bold text-foreground">{fmtN(r.roiAnualizado)}%</p>
+          </div>
+        </div>
+
         <div className="overflow-hidden rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-brand-dark text-left text-white">
-                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide">Item</th>
+                <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide">Resumo</th>
                 <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide">Valor estimado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-card">
+              <Linha label="Lance (valor de arrematação)" valor={c.valorArrematacao} />
               <Linha label="Valor de venda" valor={c.valorVenda} />
-              <Linha label="(-) Custo de aquisição (arrematação + custos)" valor={-(c.valorArrematacao + r.custosAquisicaoDedutiveis + r.custosAquisicaoNaoDedutiveis)} negativo />
-              <Linha label="(-) Custos de venda" valor={-(r.custosVendaDedutiveis + r.custosVendaNaoDedutiveis)} negativo />
-              <Linha label="(-) Débitos assumidos e custo mensal" valor={-(r.totalDebitosPontuais + r.custoMensalTotal)} negativo />
-              <Linha label="(-) Imposto de renda" valor={-r.impostoRenda} negativo />
-              <Linha label="LUCRO LÍQUIDO" valor={r.lucroLiquido} destaque forte />
+              <Linha label="Valor a declarar no IRPF (ganho de capital)" valor={r.ganhoCapitalTributavel} />
+              <Linha label="Escritura" valor={r.escrituraRS} negativo />
+              <Linha label="ITBI" valor={r.itbiRS} negativo />
+              <Linha label="Registro" valor={r.registroRS} negativo />
+              <Linha label="Assessoria (aquisição)" valor={r.assessoriaAquisicaoRS} negativo />
+              <Linha label="Reforma" valor={c.reformaMaoDeObra + c.reformaMaterial} negativo />
+              <Linha label="Dívida propter rem" valor={c.dividaPropterRem} negativo />
+              <Linha label="Débitos assumidos (IPTU/condomínio/outros)" valor={r.totalDebitosPontuais} negativo />
+              <Linha label="Custo mensal até a revenda" valor={r.custoMensalTotal} negativo />
+              <Linha label="Corretor (venda)" valor={r.corretagemVendaRS} negativo />
+              <Linha label="Assessoria (venda)" valor={r.assessoriaVendaRS} negativo />
+              <Linha label="Perda de rentabilidade" valor={r.perdaRentabilidade} negativo />
+              <Linha label="Imposto de renda" valor={r.impostoRenda} negativo />
+              <Linha label="Total desembolso" valor={r.custoTotal} destaque forte />
             </tbody>
           </table>
-
-          <div className="grid grid-cols-2 divide-x divide-border border-t border-border bg-muted-bg text-sm">
-            <div className="px-4 py-3">
-              <p className="text-xs text-muted">Exposição de caixa</p>
-              <p className="font-semibold text-foreground">{fmt(r.exposicaoDeCaixa)}</p>
-            </div>
-            <div className="px-4 py-3">
-              <p className="text-xs text-muted">Custo total</p>
-              <p className="font-semibold text-foreground">{fmt(r.custoTotal)}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 divide-x divide-border border-t border-border text-sm">
-            <div className="px-4 py-3">
-              <span className="text-xs text-muted">ROI sobre a exposição de caixa</span>
-              <p className={`font-bold ${r.roi >= 0 ? "text-success" : "text-danger"}`}>{fmtN(r.roi)}%</p>
-            </div>
-            <div className="px-4 py-3">
-              <span className="text-xs text-muted">ROI anualizado</span>
-              <p className="font-bold text-foreground">{fmtN(r.roiAnualizado)}%</p>
-            </div>
-          </div>
 
           <p className="px-4 py-3 text-[11px] leading-relaxed text-muted">
             Valores pré-preenchidos são apenas referências e não consistem no valor real deste imóvel.
